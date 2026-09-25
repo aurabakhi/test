@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aura Battle</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <section id="home" class="screen active">
+      <div class="logo">AURA BATTLE</div>
+      <p class="subtitle">Trường TH & THCS Bắc Kạn</p>
+
+      <div class="menu">
+        <button class="menu-btn" id="registerBtn">
+          <span>Đăng ký</span>
+          <small>Tham gia Aura Battle</small>
+        </button>
+
+        <button class="menu-btn" id="scheduleBtn">
+          <span>Xem lịch đấu & Sơ đồ</span>
+          <small>Xem lịch thi đấu và nhánh cây tournament</small>
+        </button>
+
+        <button class="menu-btn" id="voteBtn">
+          <span>Bình chọn trận đấu</span>
+          <small>Dự đoán người thắng cuộc</small>
+        </button>
+
+        <button class="menu-btn" id="chatBtn">
+          <span>💬 Khung Chat Cộng Đồng</span>
+          <small>Trò chuyện & gửi báo lỗi tới Admin</small>
+        </button>
+      </div>
+    </section>
+
+    <section id="register" class="screen">
+      <button class="back" id="backFromRegister">← Quay lại</button>
+      <h1>Đăng ký Aura Battle</h1>
+      <p class="muted">Điền thông tin của bạn bên dưới.</p>
+
+      <form id="registerForm" class="card">
+        <label for="name">Tên</label>
+        <input id="name" name="name" type="text" maxlength="30" placeholder="Nhập tên của bạn" autocomplete="name" required>
+
+        <label for="className">Lớp</label>
+        <input id="className" name="className" type="text" maxlength="30" placeholder="Ví dụ: 8A7" required>
+
+        <button class="primary" type="submit" id="submitBtn">Đăng ký</button>
+        <p id="registerError" class="error"></p>
+      </form>
+    </section>
+
+    <section id="waiting" class="screen">
+      <div class="status-icon" id="statusIcon">⏳</div>
+      <h1 id="waitingTitle">Đang chờ duyệt</h1>
+      <p class="muted" id="waitingSubtitle">
+        Hồ sơ của bạn đã được gửi. Hiện tại đang <strong>chờ duyệt</strong>.
+      </p>
+
+      <div class="card info">
+        <div><span>Tên</span><strong id="waitingName">---</strong></div>
+        <div><span>Lớp</span><strong id="waitingClass">---</strong></div>
+        <div><span>Trạng thái</span><strong id="waitingStatus" class="pending">Đang chờ duyệt</strong></div>
+      </div>
+
+      <button class="secondary" id="backHomeAfterRegister">Về trang đầu</button>
+    </section>
+
+    <section id="schedule" class="screen">
+      <button class="back" id="backFromSchedule">← Quay lại</button>
+      <h1>Lịch đấu & Sơ đồ cây</h1>
+      <p class="muted">Danh sách trận đấu và nhánh thi đấu do Admin cập nhật.</p>
+
+      <div class="bracket-wrapper card">
+        <div id="bracketDisplay" class="bracket">
+          <div class="loading">Đang tải sơ đồ cây thi đấu...</div>
+        </div>
+      </div>
+
+      <h2 style="margin-top: 24px;">Chi tiết lịch thi đấu</h2>
+      <div id="scheduleList" class="schedule-list">
+        <div class="loading">Đang tải lịch...</div>
+      </div>
+    </section>
+
+    <section id="voteScreen" class="screen">
+      <button class="back" id="backFromVote">← Quay lại</button>
+      <h1>Bình chọn người chiến thắng</h1>
+      <p class="muted">Bình chọn người chơi bạn cho rằng sẽ thắng cuộc.</p>
+
+      <div id="voteContent" class="card">
+        <div class="loading">Đang tải bình chọn...</div>
+      </div>
+    </section>
+
+     <!-- 6. LUẬT THI ĐẤU -->
+    <section id="rulesScreen" class="screen">
+      <button class="back" id="backFromRules">← Quay lại</button>
+      <h1>📜 Quy định & Luật thi đấu</h1>
+      <p class="muted">Vui lòng đọc kỹ quy định để tránh bị xử thua đáng tiếc.</p>
+
+      <div class="card" style="text-align: left; line-height: 1.6;">
+        <h3 style="color: #3b82f6; margin-bottom: 8px;">Quy định 1</h3>
+        <ul style="padding-left: 20px; margin-bottom: 16px;">
+          <li>Trước khi bắt đầu trận đấu hãy bắt tay và đảm bảo sẽ không gây ra tranh cãi khi bắt đầu</strong>.</li>
+          <li>Nếu vi phạm thầy cô sẽ là người xử lý và học sinh tự chịu trách nhiệm</strong>.</li>
+        </ul>
+
+        <h3 style="color: #3b82f6; margin-bottom: 8px;">Quy định 2</h3>
+        <ul style="padding-left: 20px; margin-bottom: 16px;">
+          <li>Có mặt đúng giờ nếu có sự cố không đến được sớm mọi người có thể chờ</strong> để làm thủ tục.</li>
+        </ul>
+
+        <h3 style="color: #3b82f6; margin-bottom: 8px;">Quy định 3</h3>
+        <ul style="padding-left: 20px;">
+          <li>Không biết cho vào cho đủ =D</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="chatScreen" class="screen">
+      <button class="back" id="backFromChat">← Quay lại</button>
+      <div class="chat-header-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div>
+          <h1 style="margin: 0; font-size: 1.25rem;">Phòng Chat Cộng Đồng</h1>
+          <p class="muted" id="currentNicknameTag" style="margin: 0;">Đang trò chuyện...</p>
+        </div>
+        
+        <div id="authContainer" style="display: flex; align-items: center; gap: 8px;">
+          <button id="settingsBtn" class="secondary" style="padding: 6px 12px; font-size: 0.85rem; cursor: pointer;">⚙️ Cài đặt</button>
+          <button id="btnSignOut" style="background: #ce2c2c; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;">Đăng xuất</button>
+        </div>
+      </div>
+
+      <div class="card chat-card">
+        <div id="chatMessages" class="chat-messages">
+          <div class="loading">Đang tải tin nhắn...</div>
+        </div>
+        
+        <form id="chatForm" class="chat-form">
+          <input type="text" id="chatInput" placeholder="Nhập tin nhắn..." maxlength="200" required autocomplete="off">
+          <button type="submit" class="primary send-btn">Gửi</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="loadingScreen" class="screen" style="text-align: center; padding: 40px 20px;">
+      <div class="status-icon" style="font-size: 3rem; animation: spin 1s infinite linear;">⏳</div>
+      <h2 style="margin-top: 16px;">Đang kết nối Server...</h2>
+      <p class="muted">Vui lòng chờ trong giây lát để kiểm tra thông tin thiết bị.</p>
+    </section>
+
+  </main>
+
+  <!-- MODAL ĐĂNG KÝ / ĐĂNG NHẬP CHAT -->
+  <div id="usernameModal" class="modal-overlay">
+    <div class="card modal-box" style="max-width: 400px; width: 90%;">
+      <div style="display: flex; justify-content: space-around; margin-bottom: 16px; border-bottom: 1px solid #333; padding-bottom: 8px;">
+        <button id="tabRegisterBtn" type="button" style="background: none; border: none; color: #2563eb; font-weight: bold; font-size: 1.1rem; cursor: pointer;">Đăng ký</button>
+        <button id="tabLoginBtn" type="button" style="background: none; border: none; color: #888; font-weight: bold; font-size: 1.1rem; cursor: pointer;">Đăng nhập</button>
+      </div>
+
+      <!-- FORM ĐĂNG KÝ -->
+      <form id="usernameForm">
+        <input type="text" id="modalUsernameInput" placeholder="Username (viết liền, không dấu)..." maxlength="15" required autocomplete="off" style="margin-bottom: 10px;">
+        <input type="password" id="modalPasswordInput" placeholder="Mật khẩu tài khoản..." maxlength="30" required style="margin-bottom: 10px; width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0d0d12; color: #fff;">
+        
+        <div style="text-align: left; margin-bottom: 10px;">
+          <label style="margin-bottom: 4px; display: block; font-size: 0.85rem;">Ảnh đại diện (Tùy chọn)</label>
+          
+          <!-- KHU VỰC KÉO THẢ VÀ DÁN ẢNH -->
+          <div id="dropZone" style="border: 2px dashed #444; border-radius: 8px; padding: 12px; text-align: center; background: #16161e; cursor: pointer; margin-bottom: 8px; transition: border-color 0.2s;">
+            <p style="margin: 0 0 6px; font-size: 0.8rem; color: #aaa;">Kéo thả ảnh vào đây, hoặc nhấn <kbd style="background:#222; padding:2px 4px; border-radius:4px;">Ctrl + V</kbd> để dán ảnh</p>
+            <input type="file" id="avatarFileInput" accept="image/*" style="display: block; margin: 0 auto; width: 100%; font-size: 0.8rem;">
+          </div>
+
+          <div style="display: flex; justify-content: center; margin-bottom: 8px;">
+            <img id="avatarPreview" src="" alt="Preview" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; display: none;">
+          </div>
+          <label for="zoomRange" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Thu phóng ảnh</label>
+          <input type="range" id="zoomRange" min="0.5" max="2" step="0.1" value="1" style="margin-bottom: 12px; width: 100%;">
+        </div>
+
+        <textarea id="modalBioInput" placeholder="Tiểu sử ngắn gọn..." rows="2" style="width: 100%; margin-bottom: 14px; padding: 10px; border: 1px solid #343441; border-radius: 8px; background: #0d0d12; color: #fff; resize: none; font-family: inherit;"></textarea>
+
+        <button type="submit" class="primary" style="width: 100%;">Đăng Ký Tài Khoản</button>
+        <p id="usernameError" class="error" style="margin-top: 8px; text-align: center;"></p>
+      </form>
+
+      <!-- FORM ĐĂNG NHẬP -->
+      <form id="loginForm" style="display: none;">
+        <input type="text" id="loginUsernameInput" placeholder="Username..." maxlength="15" required autocomplete="off" style="margin-bottom: 10px;">
+        <input type="password" id="loginPasswordInput" placeholder="Mật khẩu..." maxlength="30" required style="margin-bottom: 14px; width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0d0d12; color: #fff;">
+
+        <button type="submit" class="primary" style="width: 100%;">Vào Phòng Chat</button>
+        <p id="loginError" class="error" style="margin-top: 8px; text-align: center;"></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL XEM HỒ SƠ NGƯỜI DÙNG -->
+  <div id="userProfileModal" class="modal-overlay">
+    <div class="card modal-box">
+      <img id="profileAvatar" src="" alt="Avatar" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin: 0 auto 16px;">
+      <h2 id="profileDisplayName" style="margin: 0 0 4px;">---</h2>
+      <p id="profileUsername" class="muted" style="margin: 0 0 16px;">---</p>
+      <div style="background: #1a1a24; padding: 12px; border-radius: 8px; text-align: left; margin-bottom: 24px;">
+        <p id="profileBio" style="margin: 0; color: #f5f5f5; font-size: 0.95rem;">---</p>
+      </div>
+      <button id="closeProfileBtn" class="secondary" style="width: 100%;">Đóng</button>
+    </div>
+  </div>
+
+  <!-- MODAL CÀI ĐẶT (ĐỔI TÊN HỒ SƠ) -->
+  <div id="settingsModal" class="modal-overlay">
+    <div class="card modal-box">
+      <h2>Cài đặt Tài khoản</h2>
+      
+      <form id="settingsForm" style="margin-top: 16px;">
+        <label style="display:block; margin-bottom:4px; font-size:0.9rem;">Tên hiển thị <span class="muted">(1 ngày đổi 1 lần)</span></label>
+        <input type="text" id="settingDisplayName" placeholder="Tên hiển thị mới..." maxlength="30" autocomplete="off" style="margin-bottom: 12px;">
+        
+        <label style="display:block; margin-bottom:4px; font-size:0.9rem;">Username <span class="muted">(2 ngày đổi 1 lần)</span></label>
+        <input type="text" id="settingUsername" placeholder="Username mới..." maxlength="15" autocomplete="off" style="margin-bottom: 16px;">
+        
+        <button type="submit" class="primary" style="width: 100%; margin-bottom: 8px;">Lưu Thay Đổi</button>
+        <p id="settingsError" class="error" style="text-align: center; margin: 0;"></p>
+        <p id="settingsSuccess" style="color: #22c55e; font-size: 0.9rem; text-align: center; margin: 0;"></p>
+      </form>
+      
+      <button id="closeSettingsBtn" class="secondary" style="margin-top: 12px; width: 100%;">Đóng</button>
+    </div>
+  </div>
+
+  <script type="module" src="script.js"></script>
+</body>
+</html>
