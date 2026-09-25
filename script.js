@@ -10,7 +10,8 @@ import {
   where,
   serverTimestamp,
   updateDoc,
-  increment
+  increment,
+  setDoc // <-- BỔ SUNG SETDOC ĐỂ TỰ TẠO DỮ LIỆU BÌNH CHỌN NẾU THIẾU
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
 import { 
@@ -21,9 +22,13 @@ import {
   limitToLast, 
   serverTimestamp as rtdbTimestamp,
   get,
-  set
+  set,
+  remove
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
 
+// ==========================================
+// NAVIGATION & SCREEN MANAGEMENT
+// ==========================================
 const screens = {
   loadingScreen: document.getElementById("loadingScreen"),
   home: document.getElementById("home"),
@@ -31,6 +36,7 @@ const screens = {
   waiting: document.getElementById("waiting"),
   schedule: document.getElementById("schedule"),
   voteScreen: document.getElementById("voteScreen"),
+  rulesScreen: document.getElementById("rulesScreen"),
   chatScreen: document.getElementById("chatScreen")
 };
 
@@ -141,6 +147,9 @@ function listenToRegistrationStatus(regId) {
   }, () => showScreen("home"));
 }
 
+// ==========================================
+// MENU BUTTON EVENTS
+// ==========================================
 document.getElementById("registerBtn")?.addEventListener("click", () => showScreen("register"));
 document.getElementById("scheduleBtn")?.addEventListener("click", () => {
   showScreen("schedule");
@@ -157,6 +166,13 @@ document.getElementById("voteBtn")?.addEventListener("click", () => {
 });
 document.getElementById("backFromVote")?.addEventListener("click", () => showScreen("home"));
 
+// LUẬT THI ĐẤU EVENTS
+document.getElementById("rulesBtn")?.addEventListener("click", () => showScreen("rulesScreen"));
+document.getElementById("backFromRules")?.addEventListener("click", () => showScreen("home"));
+
+// ==========================================
+// REGISTER FORM SUBMISSION
+// ==========================================
 document.getElementById("registerForm")?.addEventListener("submit", async (e) => {
   e.preventDefault();
   const registerError = document.getElementById("registerError");
@@ -194,6 +210,9 @@ document.getElementById("registerForm")?.addEventListener("submit", async (e) =>
   }
 });
 
+// ==========================================
+// SCHEDULE & BRACKET
+// ==========================================
 function loadScheduleData() {
   const scheduleList = document.getElementById("scheduleList");
   if (!scheduleList) return;
@@ -241,15 +260,36 @@ function loadBracketData() {
   });
 }
 
+// ==========================================
+// VOTE SYSTEM (TỰ ĐỘNG KHỞI TẠO NẾU THIẾU DỮ LIỆU)
+// ==========================================
 function initVoteScreen() {
   const voteContent = document.getElementById("voteContent");
   if (!voteContent) return;
-  onSnapshot(doc(db, "settings", "voteConfig"), (docSnap) => {
-    if (!docSnap.exists() || !docSnap.data().active) {
+
+  const voteDocRef = doc(db, "settings", "voteConfig");
+
+  onSnapshot(voteDocRef, async (docSnap) => {
+    // Nếu chưa có dữ liệu bình chọn trên Firestore, tự động khởi tạo
+    if (!docSnap.exists()) {
+      await setDoc(voteDocRef, {
+        active: true,
+        matchId: "match_01",
+        playerA: "Người chơi A",
+        playerB: "Người chơi B",
+        votesA: 0,
+        votesB: 0
+      });
+      return;
+    }
+
+    const voteData = docSnap.data();
+
+    if (!voteData.active) {
       voteContent.innerHTML = '<div class="empty">Tính năng bình chọn hiện chưa mở.</div>';
       return;
     }
-    const voteData = docSnap.data();
+
     const total = (voteData.votesA || 0) + (voteData.votesB || 0);
     const percentA = total > 0 ? Math.round(((voteData.votesA || 0) / total) * 100) : 50;
     const percentB = total > 0 ? (100 - percentA) : 50;
@@ -261,8 +301,8 @@ function initVoteScreen() {
         <p class="muted">Tổng số phiếu: ${total}</p>
       </div>
       <div class="vote-bar-container" style="display:flex; height:20px; background:#333; border-radius:10px; overflow:hidden; margin:16px 0;">
-        <div style="width: ${percentA}%; background:#e53935; text-align:center; color:#fff; font-size:12px;">${percentA}%</div>
-        <div style="width: ${percentB}%; background:#0084ff; text-align:center; color:#fff; font-size:12px;">${percentB}%</div>
+        <div style="width: ${percentA}%; background:#e53935; text-align:center; color:#fff; font-size:12px; line-height:20px;">${percentA}%</div>
+        <div style="width: ${percentB}%; background:#0084ff; text-align:center; color:#fff; font-size:12px; line-height:20px;">${percentB}%</div>
       </div>
       <div class="vote-actions" style="display:flex; gap:12px; margin-top:20px;">
         <button id="voteBtnA" class="primary" style="flex:1;" ${hasVoted ? 'disabled' : ''}>Vote ${escapeHtml(voteData.playerA || "A")}</button>
@@ -296,6 +336,12 @@ let currentUsername = localStorage.getItem("chat_username") || "";
 let avatarBase64 = "";
 let rawImageObj = null;
 
+// NÚT QUAY LẠI TỪ MODAL ĐĂNG KÝ/ĐĂNG NHẬP CHAT
+document.getElementById("closeAuthModalBtn")?.addEventListener("click", () => {
+  document.getElementById("usernameModal")?.classList.remove("active");
+  showScreen("home");
+});
+
 // CHUYỂN ĐỔI TAB ĐĂNG KÝ / ĐĂNG NHẬP
 const tabRegisterBtn = document.getElementById("tabRegisterBtn");
 const tabLoginBtn = document.getElementById("tabLoginBtn");
@@ -318,7 +364,7 @@ tabLoginBtn?.addEventListener("click", () => {
 
 document.getElementById("chatBtn")?.addEventListener("click", () => {
   if (!currentUsername) {
-    document.getElementById("usernameModal").classList.add("active");
+    document.getElementById("usernameModal")?.classList.add("active");
   } else {
     showScreen("chatScreen");
     updateChatHeaderInfo();
@@ -327,7 +373,6 @@ document.getElementById("chatBtn")?.addEventListener("click", () => {
 });
 document.getElementById("backFromChat")?.addEventListener("click", () => showScreen("home"));
 
-// Cập nhật thông tin trên Header
 async function updateChatHeaderInfo() {
   const currentNicknameTag = document.getElementById("currentNicknameTag");
   if (!currentNicknameTag || !currentUsername) return;
@@ -346,7 +391,6 @@ async function updateChatHeaderInfo() {
   }
 }
 
-// Xử lý Nút Đăng Xuất
 document.getElementById("btnSignOut")?.addEventListener("click", () => {
   if (confirm("Bạn có chắc chắn muốn đăng xuất tài khoản chat không?")) {
     localStorage.removeItem("chat_username");
@@ -357,7 +401,7 @@ document.getElementById("btnSignOut")?.addEventListener("click", () => {
 });
 
 // ==========================================
-// XỬ LÝ ẢNH ĐẠI DIỆN (CHỌN FILE, KÉO THẢ & PASTE CTRLV)
+// AVATAR HANDLING (FILE, DRAG & DROP, CTRL+V)
 // ==========================================
 function loadImageFromFile(file) {
   if (!file || !file.type.startsWith("image/")) return;
@@ -370,14 +414,12 @@ function loadImageFromFile(file) {
   reader.readAsDataURL(file);
 }
 
-// 1. CHỌN FILE THÔNG THƯỜNG
 document.getElementById("avatarFileInput")?.addEventListener("change", (e) => {
   if (e.target.files && e.target.files[0]) {
     loadImageFromFile(e.target.files[0]);
   }
 });
 
-// 2. KÉO THẢ TỆP (DRAG & DROP)
 const dropZone = document.getElementById("dropZone");
 if (dropZone) {
   ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -410,10 +452,8 @@ if (dropZone) {
   }, false);
 }
 
-// 3. DÁN ẢNH TỪ BỘ NHỚ TẠM (CTRL + V)
 document.addEventListener("paste", (e) => {
   const usernameModal = document.getElementById("usernameModal");
-  // Chỉ nhận paste khi Modal Đăng ký đang hiển thị
   if (!usernameModal || !usernameModal.classList.contains("active")) return;
 
   const items = (e.clipboardData || e.originalEvent.clipboardData).items;
@@ -455,7 +495,7 @@ function processAvatarZoom() {
   avatarPreview.style.display = "block";
 }
 
-// FORM ĐĂNG KÝ
+// FORM ĐĂNG KÝ CHAT
 document.getElementById("usernameForm")?.addEventListener("submit", async (e) => {
   e.preventDefault();
   const usernameError = document.getElementById("usernameError");
@@ -497,7 +537,7 @@ document.getElementById("usernameForm")?.addEventListener("submit", async (e) =>
 
     localStorage.setItem("chat_username", enteredUsername);
     currentUsername = enteredUsername;
-    document.getElementById("usernameModal").classList.remove("active");
+    document.getElementById("usernameModal")?.classList.remove("active");
     showScreen("chatScreen");
     updateChatHeaderInfo();
     initChatListener();
@@ -506,7 +546,7 @@ document.getElementById("usernameForm")?.addEventListener("submit", async (e) =>
   }
 });
 
-// FORM ĐĂNG NHẬP
+// FORM ĐĂNG NHẬP CHAT
 document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
   e.preventDefault();
   const loginError = document.getElementById("loginError");
@@ -535,7 +575,7 @@ document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
 
     localStorage.setItem("chat_username", enteredUsername);
     currentUsername = enteredUsername;
-    document.getElementById("usernameModal").classList.remove("active");
+    document.getElementById("usernameModal")?.classList.remove("active");
     showScreen("chatScreen");
     updateChatHeaderInfo();
     initChatListener();
@@ -544,37 +584,61 @@ document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
   }
 });
 
+// ==========================================
+// CHAT MESSAGES REALTIME (ĐÃ KHẮC PHỤC TRÙNG LẶP TIN NHẮN)
+// ==========================================
 let isChatInitialized = false;
+
 function initChatListener() {
   if (isChatInitialized) return;
   isChatInitialized = true;
+
   const chatMessages = document.getElementById("chatMessages");
+
   onValue(rtdbQuery(ref(rtdb, "chat_messages"), limitToLast(60)), (snapshot) => {
     if (!chatMessages) return;
+
     chatMessages.innerHTML = "";
     if (!snapshot.exists()) {
       chatMessages.innerHTML = '<div class="empty">Chưa có tin nhắn nào.</div>';
       return;
     }
-    snapshot.forEach((childSnap) => appendMessengerBubble(chatMessages, childSnap.val()));
+
+    snapshot.forEach((childSnap) => {
+      appendMessengerBubble(chatMessages, childSnap.val());
+    });
+
     chatMessages.scrollTop = chatMessages.scrollHeight;
   });
 }
 
+// SỰ KIỆN GỬI TIN NHẮN CHUẨN REALTIME
 document.getElementById("chatForm")?.addEventListener("submit", async (e) => {
   e.preventDefault();
   const chatInput = document.getElementById("chatInput");
   const text = chatInput.value.trim();
   if (!text || !currentUsername) return;
-  chatInput.value = "";
-  
+
+  chatInput.value = ""; // Clear ô nhập ngay lập tức
+
+  let userAvatar = `https://ui-avatars.com/api/?name=${currentUsername}`;
+  let userDisplayName = currentUsername;
+
   try {
     const userSnap = await get(ref(rtdb, `users_profile/${currentUsername}`));
-    const userData = userSnap.exists() ? userSnap.val() : {};
+    if (userSnap.exists()) {
+      const uData = userSnap.val();
+      if (uData.avatar) userAvatar = uData.avatar;
+      if (uData.displayName) userDisplayName = uData.displayName;
+    }
+  } catch (err) {}
+
+  // Gửi tin nhắn lên Firebase ngầm, Firebase tự kích hoạt onValue bắn lại UI rất nhanh
+  try {
     await push(ref(rtdb, "chat_messages"), {
       username: currentUsername,
-      displayName: userData.displayName || currentUsername,
-      avatar: userData.avatar || `https://ui-avatars.com/api/?name=${currentUsername}`,
+      displayName: userDisplayName,
+      avatar: userAvatar,
       text: text,
       isAdmin: false,
       timestamp: rtdbTimestamp()
@@ -584,20 +648,12 @@ document.getElementById("chatForm")?.addEventListener("submit", async (e) => {
   }
 });
 
-async function appendMessengerBubble(container, msg) {
+function appendMessengerBubble(container, msg) {
   const item = document.createElement("div");
   const isMe = msg.username === currentUsername;
   item.className = `chat-bubble-row ${isMe ? "msg-right" : "msg-left"}`;
   
-  let currentDisplayName = msg.displayName || msg.username;
-  
-  try {
-    const userSnap = await get(ref(rtdb, `users_profile/${msg.username}`));
-    if (userSnap.exists()) {
-      const uData = userSnap.val();
-      if (uData.displayName) currentDisplayName = uData.displayName;
-    }
-  } catch (err) {}
+  const currentDisplayName = msg.displayName || msg.username;
 
   item.innerHTML = `
     <div class="chat-user-header" style="display:flex; align-items:center; gap:6px; cursor:pointer;">
@@ -606,10 +662,14 @@ async function appendMessengerBubble(container, msg) {
     </div>
     <div class="chat-bubble">${escapeHtml(msg.text)}</div>
   `;
+
   item.querySelector(".chat-user-header")?.addEventListener("click", () => openUserProfile(msg.username));
   container.appendChild(item);
 }
 
+// ==========================================
+// USER PROFILE MODAL
+// ==========================================
 async function openUserProfile(targetUsername) {
   const userProfileModal = document.getElementById("userProfileModal");
   if (!targetUsername || !userProfileModal) return;
@@ -643,7 +703,7 @@ function escapeHtml(value) {
 checkUserOnLoad();
 
 // ==========================================
-// LOGIC CÀI ĐẶT: ĐỔI TÊN HỒ SƠ
+// SETTINGS MODAL: CHANGE NAME / USERNAME (SỬ DỤNG REMOVE ĐỂ CHỐNG TRÙNG HỒ SƠ)
 // ==========================================
 document.getElementById("settingsBtn")?.addEventListener("click", async () => {
   if (!currentUsername) return;
@@ -656,7 +716,7 @@ document.getElementById("settingsBtn")?.addEventListener("click", async () => {
     document.getElementById("settingUsername").value = data.username || "";
     document.getElementById("settingsError").textContent = "";
     document.getElementById("settingsSuccess").textContent = "";
-    settingsModal.classList.add("active");
+    settingsModal?.classList.add("active");
   }
 });
 
@@ -671,20 +731,21 @@ document.getElementById("settingsForm")?.addEventListener("submit", async (e) =>
   errEl.textContent = ""; succEl.textContent = "";
   
   const newDisplayName = document.getElementById("settingDisplayName").value.trim();
-  const newUsername = document.getElementById("settingUsername").value.trim();
+  const newUsername = document.getElementById("settingUsername").value.trim().toLowerCase();
   
   if (!newUsername || !newDisplayName) {
     errEl.textContent = "Không được để trống thông tin!"; return;
   }
   if (!/^[a-z0-9]+$/.test(newUsername)) {
-    errEl.textContent = "Username chỉ chứa chữ cái thường và số, không khoảng trắng!"; return;
+    errEl.textContent = "Username chỉ chứa chữ cái thường và số!"; return;
   }
   if (newUsername.includes("admin") || newUsername.includes("btc")) {
     errEl.textContent = "Username chứa từ khóa bị cấm!"; return;
   }
 
   try {
-    const oldRef = ref(rtdb, `users_profile/${currentUsername}`);
+    const oldUsername = currentUsername;
+    const oldRef = ref(rtdb, `users_profile/${oldUsername}`);
     const snap = await get(oldRef);
     if (!snap.exists()) return;
     
@@ -693,10 +754,9 @@ document.getElementById("settingsForm")?.addEventListener("submit", async (e) =>
     const ONE_DAY_MS = 86400000;
     const TWO_DAYS_MS = 172800000;
     
-    let isChanged = false;
     let newData = { ...userData };
-    let isUsernameChanged = false;
 
+    // 1. Đổi Display Name
     if (newDisplayName !== userData.displayName) {
       const lastDispTime = userData.lastDisplayNameChange || 0;
       if (now - lastDispTime < ONE_DAY_MS) {
@@ -705,10 +765,10 @@ document.getElementById("settingsForm")?.addEventListener("submit", async (e) =>
       }
       newData.displayName = newDisplayName;
       newData.lastDisplayNameChange = now;
-      isChanged = true;
     }
 
-    if (newUsername !== userData.username) {
+    // 2. Đổi Username
+    if (newUsername !== oldUsername) {
       const lastUserTime = userData.lastUsernameChange || 0;
       if (now - lastUserTime < TWO_DAYS_MS) {
         const timeLeft = Math.ceil((TWO_DAYS_MS - (now - lastUserTime)) / 3600000);
@@ -722,28 +782,21 @@ document.getElementById("settingsForm")?.addEventListener("submit", async (e) =>
       
       newData.username = newUsername;
       newData.lastUsernameChange = now;
-      isUsernameChanged = true;
-      isChanged = true;
+
+      // Xóa hồ sơ cũ trên Firebase trước rồi mới tạo hồ sơ mới
+      await remove(oldRef);
+      await set(ref(rtdb, `users_profile/${newUsername}`), newData);
+      
+      currentUsername = newUsername;
+      localStorage.setItem("chat_username", newUsername);
+    } else {
+      await set(oldRef, newData);
     }
 
-    if (isChanged) {
-      if (isUsernameChanged) {
-        await set(ref(rtdb, `users_profile/${newUsername}`), newData);
-        await set(ref(rtdb, `users_profile/${currentUsername}`), null); 
-        currentUsername = newUsername;
-        localStorage.setItem("chat_username", newUsername);
-      } else {
-        await set(oldRef, newData);
-      }
-      succEl.textContent = "Cập nhật thành công!";
-      updateChatHeaderInfo();
-      isChatInitialized = false;
-      initChatListener();
-      
-      setTimeout(() => document.getElementById("settingsModal").classList.remove("active"), 1200);
-    } else {
-      errEl.textContent = "Không có thông tin nào được thay đổi.";
-    }
+    succEl.textContent = "Cập nhật thành công!";
+    updateChatHeaderInfo();
+    
+    setTimeout(() => document.getElementById("settingsModal")?.classList.remove("active"), 1000);
 
   } catch (err) {
     console.error(err);
