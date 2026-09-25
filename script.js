@@ -11,7 +11,7 @@ import {
   serverTimestamp,
   updateDoc,
   increment,
-  setDoc // <-- BỔ SUNG SETDOC ĐỂ TỰ TẠO DỮ LIỆU BÌNH CHỌN NẾU THIẾU
+  setDoc
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
 import { 
